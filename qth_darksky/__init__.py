@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import traceback
 from argparse import ArgumentParser
 from functools import partial
 
@@ -59,8 +60,11 @@ async def update_weather():
             client.set_property(prefix + "sunset/unix",
                                 weather["daily"]["data"][0]["sunsetTime"]),
         ], loop=loop)
-    finally:
         loop.call_later(interval, partial(loop.create_task, update_weather()))
+    except (OSError, IOError):
+        traceback.print_exc()
+        # Retry soon
+        loop.call_later(30, partial(loop.create_task, update_weather()))
 
 async def async_main():
     await asyncio.wait([
